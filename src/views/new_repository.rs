@@ -18,7 +18,7 @@ impl NewRepository {
 
     pub fn render_new_repo(
         &mut self,
-        explore: &mut Explore,
+        _explore: &mut Explore,
         view: &mut View,
         portan: &mut Portan,
         ui: &mut eframe::egui::Ui,
@@ -44,7 +44,7 @@ impl NewRepository {
         ui.text_edit_singleline(&mut repo_info.git_url);
 
         if ui.button("Publish").clicked() {
-            if let Ok(repo_info) = portan.publish_repository(repo_info.clone()) {
+            if let Ok(_repo_info) = portan.publish_repository(repo_info.clone()) {
                 // *explore = Explore::new(portan).unwrap();
                 // explore.add_repo(repo_info)?;
                 *view = View::Explore;

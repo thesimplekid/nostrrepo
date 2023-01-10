@@ -201,8 +201,7 @@ impl Issue {
                                     true,
                                 )
                                 .unwrap();
-                            self.issue_info.current_status = IssueStatus::CloseCompleted;        
-                            }
+                            self.issue_info.current_status = IssueStatus::CloseCompleted;                            }
 
                             if ui.button(format!("Close {}", comment_text)).clicked() {
                             portan
@@ -212,8 +211,8 @@ impl Issue {
                                     false,
                                 )
                                 .unwrap();
-                            self.issue_info.current_status = IssueStatus::Close;      
-                            }
+                            self.issue_info.current_status = IssueStatus::Close;
+                        }
                                 }
                             },
                             IssueStatus::Close | IssueStatus::CloseCompleted => {

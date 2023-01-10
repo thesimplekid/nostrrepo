@@ -71,7 +71,7 @@ impl Explore {
 
                     let owner = match portan.petnames.get(&r.owner_pub_key) {
                         Some(value) => value.clone().unwrap(),
-                        None => truncated_npub(&r.owner_pub_key).unwrap_or("".to_string()),
+                        None => truncated_npub(&r.owner_pub_key).unwrap(),
                     };
                     let repo_slug = format!("{}/{}", owner, &r.name);
 
