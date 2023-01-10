@@ -1,0 +1,5 @@
+**/target
+/dist
+**Cargo.lock
+./portan-git/portan-testing
+**.env-dev
