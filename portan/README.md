@@ -52,9 +52,10 @@ A publish patch event is a kind 128 with the "e" tag the `event id` of the publi
 }
 ``` 
 
-## TODO: 
-- Make async
-- Efficiency improvements (few places that are a little hacky)
+## TODO:
+- [ ] Alot of the content should be moved to tags 
+- [ ] Make async
+- [ ] Efficiency improvements (few places that are a little hacky)
     - [ ] Petname calls
     - [ ] A lot of functions have more arguments then i would like
     this can probably be reduced using DB. [redb](https://github.com/cberner/redb)

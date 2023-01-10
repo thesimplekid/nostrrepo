@@ -1,7 +1,9 @@
 use crate::views::{
     explore::Explore, new_repository::NewRepository, repository::Repository, settings::Settings,
 };
+use dirs::home_dir;
 use portan::Portan;
+use std::path::PathBuf;
 
 use anyhow::Result;
 
@@ -19,6 +21,8 @@ pub struct State {
 
     pub settings_view: Settings,
 
+    pub nostrrepo_folder: PathBuf,
+
     pub portan: Portan,
 }
 
@@ -33,6 +37,7 @@ impl State {
             repository_id: "".to_string(),
 
             settings_view: Settings::default(),
+            nostrrepo_folder: home_dir().unwrap().join("nostrrepo"),
 
             portan,
         })
@@ -68,6 +73,8 @@ impl NostrRepoApp {
         // if let Some(storage) = cc.storage {
         //    return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         // }
+        let nostr_repo_folder = home_dir().unwrap().join("nostrrepo");
+        portan_git::create_directory(&nostr_repo_folder).unwrap();
 
         Default::default()
     }
@@ -151,7 +158,7 @@ impl eframe::App for NostrRepoApp {
 
                     self.state
                         .repository_view
-                        .render_repository(&mut self.state.portan, ui)
+                        .render_repository(&mut self.state.portan, &self.state.nostrrepo_folder, ui)
                         .unwrap();
                 }
             };

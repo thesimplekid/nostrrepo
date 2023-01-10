@@ -2,13 +2,10 @@ use portan::{repository::RepoInfo, types::PatchInfo, utils::encode_id_to_number,
 use portan_git::save_patch;
 use serde::{Deserialize, Serialize};
 
-use dirs::home_dir;
 use egui::{Label, RichText, ScrollArea, Sense};
-use std::fs;
+use std::{fs, path::Path};
 
 use anyhow::Result;
-
-use super::repository::LocalRepoData;
 
 pub const PADDING: f32 = 5.0;
 
@@ -22,7 +19,6 @@ pub struct Patch {
 pub enum PatchState {
     Patch(PatchInfo),
     Patches(bool),
-    // NewIssue,
 }
 
 impl Default for PatchState {
@@ -41,9 +37,8 @@ impl Patch {
 
     pub fn render_patch(
         &mut self,
-        // TODO: these both getting passed in doesnt make much sense
-        local_data: &mut LocalRepoData,
         repo_info: &mut RepoInfo,
+        nostrrepo_path: &Path,
         ui: &mut eframe::egui::Ui,
     ) -> Result<()> {
         ui.add(Label::new(
@@ -62,31 +57,24 @@ impl Patch {
         if ui.button("Copy Patch").clicked() {
             ui.output().copied_text = self.patch_info.patch.clone();
         }
-        if let Some(local_path) = &repo_info.local_path {
-            ui.label("Download the patch to the local folder");
-            ui.label("for now you'll have to apply the patch manually");
-            if ui.button("Save patch").clicked() {
-                save_patch(local_path, &self.patch_info)?;
-            }
-        }
-        // This should be a config option or something not declared here
-        let nostr_repo_folder = home_dir().unwrap().join("nostrrepo");
-        portan_git::create_directory(&nostr_repo_folder).unwrap();
-        let repos = fs::read_dir(nostr_repo_folder).unwrap();
 
-        for repo in repos {
-            let repo = repo.unwrap();
-            let repo_path = &repo.path();
-            if ui
-                .selectable_label(
-                    local_data.local_repo_path.eq(repo_path),
-                    format!("{:?}", repo.file_name()),
-                )
-                .clicked()
-            {
-                // TODO: This should not be changed here
-                local_data.local_repo_path = repo_path.clone();
-                repo_info.local_path = Some(repo_path.clone());
+        let path = nostrrepo_path.join(repo_info.name.clone());
+        match fs::metadata(&path) {
+            Ok(_) => {
+                ui.label("Download the patch to the local folder");
+                ui.label("for now you'll have to apply the patch manually");
+                if ui.button("Save patch").clicked() {
+                    save_patch(&path, &self.patch_info)?;
+                    ui.add(Label::new(RichText::new(format!(
+                        "Local repo at: {}",
+                        path.display()
+                    ))));
+                }
+            }
+            Err(_) => {
+                ui.label(
+                    "Looks like there is no matching local repo.\nYou may need to clone the repo",
+                );
             }
         }
         Ok(())

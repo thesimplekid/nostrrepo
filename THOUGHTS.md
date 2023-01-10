@@ -1,0 +1,1 @@
+1) It may make more sense to publish some of the information in tags and not in the content. This could allow for better searching on relays. For example the repository name should be a take, issue title etc. 
