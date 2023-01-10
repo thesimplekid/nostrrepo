@@ -1,8 +1,4 @@
-use crate::{
-    errors::Error,
-    repository::{RepoEventContent, RepoInfo},
-    types::PatchInfo,
-};
+use crate::{errors::Error, repository::RepoInfo, types::PatchInfo};
 
 use nostr_rust::{
     bech32::{to_bech32, ToBech32Kind},
@@ -62,13 +58,28 @@ pub fn event_to_repo_info(event: &Event) -> Result<RepoInfo, Error> {
     if event.verify().is_err() {
         return Err(Error::EventInvalid);
     }
-    let content: RepoEventContent = serde_json::from_str(&event.content).unwrap();
+    // let content: RepoEventContent = serde_json::from_str(&event.content).unwrap();
+    let mut git_url: Option<String> = None;
+    let mut name: Option<String> = None;
+
+    for v in &event.tags {
+        match v[0].as_str() {
+            "r" => git_url = Some(v[1].clone()),
+            "n" => name = Some(v[1].clone()),
+            _ => (),
+        }
+    }
+
+    if name.is_none() || git_url.is_none() {
+        return Err(Error::RepoUndefined);
+    }
+
     Ok(RepoInfo {
         owner_pub_key: event.pub_key.clone(),
         id: event.id.clone(),
-        name: content.name,
-        description: content.description,
-        git_url: content.git_url,
+        name: name.unwrap(),
+        description: event.content.clone(),
+        git_url: git_url.unwrap(),
         local_path: None,
     })
 }

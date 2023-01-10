@@ -54,8 +54,11 @@ impl Portan {
             pub_key: self.identity.public_key_str.clone(),
             created_at: get_timestamp(),
             kind: 124,
-            tags: vec![],
-            content: serde_json::to_string(&repo_info)?,
+            tags: vec![
+                vec!["r".to_string(), repo_info.git_url],
+                vec!["n".to_string(), repo_info.name],
+            ],
+            content: repo_info.description,
         }
         .to_event(&self.identity, 0);
 

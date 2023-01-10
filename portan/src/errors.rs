@@ -19,6 +19,9 @@ pub enum Error {
 
     #[error("Invalid key")]
     InvalidKey,
+
+    #[error("Repo undefined")]
+    RepoUndefined,
 }
 
 impl From<serde_json::Error> for Error {
