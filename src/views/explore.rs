@@ -69,8 +69,8 @@ impl Explore {
                 for r in &self.published_repositories {
                     ui.add_space(PADDING);
 
-                    let owner = match portan.petnames.get(&r.owner_pub_key) {
-                        Some(value) => value.clone().unwrap(),
+                    let owner = match portan.db.read_name(&r.owner_pub_key).unwrap() {
+                        Some(value) => value.clone(),
                         None => truncated_npub(&r.owner_pub_key).unwrap(),
                     };
                     let repo_slug = format!("{}/{}", owner, &r.name);

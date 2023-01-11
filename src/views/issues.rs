@@ -64,9 +64,9 @@ impl Issue {
                     .stroke(Stroke::new(1.0, Color32::GRAY))
                     .show(ui, |ui| {
                         ui.add_space(PADDING);
-                        let author = match portan.petnames.get(&self.repo_info.owner_pub_key) {
-                            Some(value) => value.clone().unwrap(),
-                            None => truncated_npub(&self.repo_info.owner_pub_key).unwrap(),
+                        let author = match portan.db.read_name(&self.repo_info.owner_pub_key) {
+                            Ok(Some(value)) => value,
+                            _ => truncated_npub(&self.repo_info.owner_pub_key).unwrap(),
                         };
                         let datetime: DateTime<Utc> = DateTime::from_utc(
                             NaiveDateTime::from_timestamp_opt(
@@ -94,9 +94,9 @@ impl Issue {
                             ui.add_space(PADDING);
                             match response {
                                 IssueResponse::Comment(comment) => {
-                                    let author = match portan.petnames.get(&comment.author) {
-                                        Some(value) => value.clone().unwrap(),
-                                        None => truncated_npub(&comment.author).unwrap(),
+                                    let author = match portan.db.read_name(&comment.author) {
+                                        Ok(Some(value)) => value,
+                                        _ => truncated_npub(&comment.author).unwrap(),
                                     };
                                     let datetime: DateTime<Utc> = DateTime::from_utc(
                                         NaiveDateTime::from_timestamp_opt(
@@ -118,9 +118,9 @@ impl Issue {
                                     if status.author.eq(&self.issue_info.author)
                                         || status.author.eq(&self.repo_info.owner_pub_key)
                                     {
-                                        let author = match portan.petnames.get(&status.author) {
-                                            Some(value) => value.clone().unwrap(),
-                                            None => truncated_npub(&status.author).unwrap(),
+                                        let author = match portan.db.read_name(&status.author) {
+                                            Ok(Some(value)) => value,
+                                            _ => truncated_npub(&status.author).unwrap(),
                                         };
                                         let datetime: DateTime<Utc> = DateTime::from_utc(
                                             NaiveDateTime::from_timestamp_opt(

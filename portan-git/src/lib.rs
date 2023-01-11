@@ -55,6 +55,7 @@ pub fn generate_patch(local_repo: &PathBuf, num_commits: usize) -> Result<String
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+/// Gets the git log of the local repo
 pub fn get_log(local_repo: &PathBuf) -> Result<Vec<String>, Error> {
     let output = Command::new("git")
         .current_dir(local_repo)
@@ -70,12 +71,14 @@ pub fn get_log(local_repo: &PathBuf) -> Result<Vec<String>, Error> {
         .collect())
 }
 
+/// Creates a directory ignoring ant errors
 pub fn create_directory(path: &PathBuf) -> Result<(), Error> {
     let _ = fs::create_dir(path);
 
     Ok(())
 }
 
+// Save a path to local folder
 pub fn save_patch(path: &PathBuf, patch: &PatchInfo) -> Result<(), Error> {
     let mut file = File::create(
         Path::new(path).join(format!("{}.patch", patch.name.clone().replace(' ', "-"))),

@@ -86,6 +86,7 @@ pub fn event_to_repo_info(event: &Event) -> Result<RepoInfo, Error> {
     })
 }
 
+/// Converts a nostr event to patch info
 pub fn event_to_patch_info(event: &Event) -> Result<PatchInfo, Error> {
     if event.verify().is_err() {
         return Err(Error::EventInvalid);

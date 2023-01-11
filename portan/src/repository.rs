@@ -31,7 +31,7 @@ impl RepoInfo {
             until: None,
             limit: Some(1),
         };
-        // TODO check there isnt more then one
+        // TODO: check there isnt more then one
         if let Ok(event) = portan.nostr_client.get_events_of(vec![filter]) {
             let event = &event[0];
 
@@ -105,9 +105,12 @@ impl Portan {
                     .filter_map(|event| utils::event_to_repo_info(event).ok())
                     .collect::<Vec<RepoInfo>>();
 
+                // Iterates over the events to find nostr pub keys that haven't been seen
                 let new_keys = events.iter().fold(vec![], |mut v, e| {
-                    if !&self.petnames.contains_key(&e.pub_key) {
-                        v.push(e.pub_key.clone());
+                    if let Ok(r) = &self.db.read_name(&e.pub_key) {
+                        if r.is_none() {
+                            v.push(e.pub_key.clone());
+                        }
                     }
                     v
                 });
@@ -159,8 +162,10 @@ impl Portan {
                     .filter_map(|e| utils::event_to_patch_info(e).ok())
                     .collect::<Vec<PatchInfo>>();
                 let new_keys = events.iter().fold(vec![], |mut v, e| {
-                    if !&self.petnames.contains_key(&e.pub_key) {
-                        v.push(e.pub_key.clone());
+                    if let Ok(r) = &self.db.read_name(&e.pub_key) {
+                        if r.is_none() {
+                            v.push(e.pub_key.clone());
+                        }
                     }
                     v
                 });

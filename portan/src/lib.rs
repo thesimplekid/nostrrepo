@@ -1,15 +1,17 @@
+pub mod database;
 pub mod errors;
 pub mod issues;
 pub mod repository;
 pub mod types;
 pub mod utils;
 
+use database::PortanDb;
 use errors::Error;
 use nostr_rust::req::ReqFilter;
 use serde_json::Value;
 
 use dotenvy::{self, dotenv};
-use std::{collections::HashMap, env, fmt, fs};
+use std::{env, fmt, fs};
 
 use nostr_rust::{
     bech32::{from_hb_to_hex, to_bech32, ToBech32Kind},
@@ -23,8 +25,7 @@ use std::str::FromStr;
 pub struct Portan {
     pub identity: Identity,
     pub nostr_client: NostrClient,
-
-    pub petnames: HashMap<String, Option<String>>,
+    pub db: PortanDb,
 }
 
 impl Default for Portan {
@@ -53,7 +54,7 @@ impl Default for Portan {
         Portan {
             identity,
             nostr_client,
-            petnames: HashMap::default(),
+            db: PortanDb::new(),
         }
     }
 }
@@ -73,7 +74,7 @@ impl Portan {
         Ok(Self {
             identity,
             nostr_client,
-            petnames: HashMap::default(),
+            db: PortanDb::new(),
         })
     }
 
@@ -100,12 +101,12 @@ impl Portan {
     }
 
     /// Get bech32 keys
-    /// ```rust
+    /// ```no_run
     /// use portan::Portan;
     ///
-    ///
     /// let priv_key = "a4c75131064cecdceac1275bc42310d02c5ddae643d83e075ee7941137c7e1c9";
-    /// let mut portan = Portan::new(priv_key, vec!["wss://relay.thesimplekid.com"]).unwrap();
+    ///
+    /// let mut portan = Portan::new(priv_key, vec!["wss://nostr.thesimplekid.com"]).unwrap();
     /// let (privkey, pubkey) = portan.get_bech32_keys().unwrap();
     ///
     /// assert_eq!(pubkey, "npub15nr2zfan778slpf3lhql42z4ldwzrvdxlq4d6jea7nz94hlc63ps2vza9s".to_string());
@@ -119,14 +120,17 @@ impl Portan {
         Ok((priv_key, pub_key))
     }
 
+    /// Add a relay
     pub fn add_relay(&mut self, new_relay: &str) -> Result<(), Error> {
         Ok(self.nostr_client.add_relay(new_relay)?)
     }
 
+    /// Remove a relay
     pub fn remove_relay(&mut self, relay: &str) -> Result<(), Error> {
         Ok(self.nostr_client.remove_relay(relay)?)
     }
 
+    /// Gets petnames of pubkeys in list
     pub fn get_petnames(&mut self, pubkeys: Vec<String>) -> Result<(), Error> {
         let filter = ReqFilter {
             ids: None,
@@ -144,10 +148,13 @@ impl Portan {
                 for event in events {
                     let content: Value = serde_json::from_str(&event.content)?;
                     if let Some(name) = content.get("name") {
-                        self.petnames
-                            .insert(event.pub_key, Some(serde_json::from_value(name.clone())?));
+                        self.db.write_name(
+                            &event.pub_key,
+                            &serde_json::from_value::<String>(name.clone())?,
+                        )?;
                     } else {
-                        self.petnames.insert(event.pub_key, None);
+                        // TODO: Maybe should just not add
+                        //self.petnames.insert(event.pub_key, None);
                     };
                 }
             }

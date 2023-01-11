@@ -81,9 +81,9 @@ impl Repository {
         ui: &mut eframe::egui::Ui,
     ) -> Result<()> {
         ui.label("Repo");
-        let owner = match portan.petnames.get(&self.repo_info.owner_pub_key) {
-            Some(value) => value.clone().unwrap(),
-            None => truncated_npub(&self.repo_info.owner_pub_key).unwrap(),
+        let owner = match portan.db.read_name(&self.repo_info.owner_pub_key) {
+            Ok(Some(value)) => value,
+            _ => truncated_npub(&self.repo_info.owner_pub_key).unwrap(),
         };
         let repo_slug = format!("{}/{}", owner, self.repo_info.name);
         ui.add_space(PADDING);

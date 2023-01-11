@@ -25,6 +25,9 @@ pub enum Error {
 
     #[error("Nip 1 error")]
     NostrRustError(nostr_rust::nips::nip1::NIP1Error),
+
+    #[error("Database error")]
+    DBError(redb::Error),
 }
 
 impl From<serde_json::Error> for Error {
@@ -48,5 +51,11 @@ impl From<nostr_rust::bech32::Bech32Error> for Error {
 impl From<nostr_rust::nips::nip1::NIP1Error> for Error {
     fn from(err: nostr_rust::nips::nip1::NIP1Error) -> Self {
         Self::NostrRustError(err)
+    }
+}
+
+impl From<redb::Error> for Error {
+    fn from(err: redb::Error) -> Self {
+        Self::DBError(err)
     }
 }

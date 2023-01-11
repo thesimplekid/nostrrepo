@@ -11,6 +11,7 @@ use nostr_rust::{
 };
 
 impl Portan {
+    /// Publish an issue event
     pub fn publish_issue(
         &mut self,
         repo_info: &RepoInfo,
@@ -64,7 +65,7 @@ impl Portan {
     }
 
     /// Converts a nostr event IssueInfo
-    /// ```
+    /// ```rust
     /// use portan::Portan;
     /// use portan::repository::RepoInfo;
     /// use portan::types::{IssueInfo, IssueStatus};
@@ -297,6 +298,7 @@ impl Portan {
         }))
     }
 
+    /// Publish a reopen issue event
     pub fn publish_reopen_issue(
         &mut self,
         issue_id: &str,
