@@ -6,9 +6,8 @@ use crate::{
 
 use nostr_rust::{
     bech32::{to_bech32, ToBech32Kind},
-    events::{Event, EventPrepare},
+    events::Event,
     req::ReqFilter,
-    utils::get_timestamp,
 };
 
 impl Portan {
@@ -17,19 +16,14 @@ impl Portan {
         repo_info: &RepoInfo,
         issue_info: IssueInfo,
     ) -> Result<IssueInfo, Error> {
-        let event = EventPrepare {
-            pub_key: self.identity.public_key_str.clone(),
-            created_at: get_timestamp(),
-            kind: 125,
-            tags: vec![
-                vec!["e".to_string(), repo_info.id.to_string()],
-                vec!["n".to_string(), issue_info.title],
-            ],
-            content: issue_info.content,
-        }
-        .to_event(&self.identity, 0);
+        let tags = vec![
+            vec!["e".to_string(), repo_info.id.to_string()],
+            vec!["n".to_string(), issue_info.title],
+        ];
 
-        self.nostr_client.publish_event(&event)?;
+        let event = self.identity.make_event(125, &issue_info.content, &tags, 0);
+
+        self.nostr_client.broadcast_event(&event)?;
         let issue_info = self.event_to_issue_info(&event, repo_info)?;
         Ok(issue_info)
     }
@@ -257,16 +251,11 @@ impl Portan {
         issue_id: &str,
         content: &str,
     ) -> Result<IssueComment, Error> {
-        let event = EventPrepare {
-            pub_key: self.identity.public_key_str.clone(),
-            created_at: get_timestamp(),
-            kind: 126,
-            tags: vec![vec!["e".to_string(), issue_id.to_string()]],
-            content: content.to_string(),
-        }
-        .to_event(&self.identity, 0);
+        let tags = vec![vec!["e".to_string(), issue_id.to_string()]];
 
-        self.nostr_client.publish_event(&event)?;
+        let event = self.identity.make_event(126, content, &tags, 0);
+
+        self.nostr_client.broadcast_event(&event)?;
 
         Ok(IssueComment {
             author: event.pub_key,
@@ -293,16 +282,13 @@ impl Portan {
             false => IssueStatus::Close,
         };
 
-        let event = EventPrepare {
-            pub_key: self.identity.public_key_str.clone(),
-            created_at: get_timestamp(),
-            kind: 127,
-            tags: vec![vec!["e".to_string(), issue_id.to_string()]],
-            content: serde_json::to_string(&content)?,
-        }
-        .to_event(&self.identity, 0);
+        let tags = vec![vec!["e".to_string(), issue_id.to_string()]];
 
-        self.nostr_client.publish_event(&event)?;
+        let event = self
+            .identity
+            .make_event(127, &serde_json::to_string(&content)?, &tags, 0);
+
+        self.nostr_client.broadcast_event(&event)?;
 
         Ok(IssueResponse::Status(StatusUpdate {
             author: event.pub_key,
@@ -322,16 +308,12 @@ impl Portan {
             self.publish_issue_comment(issue_id, comment)?;
         }
 
-        let event = EventPrepare {
-            pub_key: self.identity.public_key_str.clone(),
-            created_at: get_timestamp(),
-            kind: 127,
-            tags: vec![vec!["e".to_string(), issue_id.to_string()]],
-            content: serde_json::to_string(&IssueStatus::Open)?,
-        }
-        .to_event(&self.identity, 0);
+        let tags = vec![vec!["e".to_string(), issue_id.to_string()]];
+        let event =
+            self.identity
+                .make_event(127, &serde_json::to_string(&IssueStatus::Open)?, &tags, 0);
 
-        self.nostr_client.publish_event(&event)?;
+        self.nostr_client.broadcast_event(&event)?;
 
         Ok(IssueResponse::Status(StatusUpdate {
             author: event.pub_key,

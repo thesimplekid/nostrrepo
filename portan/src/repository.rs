@@ -1,6 +1,6 @@
 use crate::{errors::Error, types::PatchInfo, utils, Portan};
 
-use nostr_rust::{events::EventPrepare, req::ReqFilter, utils::get_timestamp};
+use nostr_rust::req::ReqFilter;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -47,19 +47,16 @@ impl RepoInfo {
 
 impl Portan {
     pub fn publish_repository(&mut self, repo_info: RepoEventContent) -> Result<RepoInfo, Error> {
-        let event = EventPrepare {
-            pub_key: self.identity.public_key_str.clone(),
-            created_at: get_timestamp(),
-            kind: 124,
-            tags: vec![
-                vec!["r".to_string(), repo_info.git_url],
-                vec!["n".to_string(), repo_info.name],
-            ],
-            content: repo_info.description,
-        }
-        .to_event(&self.identity, 0);
+        let tags = vec![
+            vec!["r".to_string(), repo_info.git_url],
+            vec!["n".to_string(), repo_info.name],
+        ];
 
-        self.nostr_client.publish_event(&event)?;
+        let event = self
+            .identity
+            .make_event(124, &repo_info.description, &tags, 0);
+
+        self.nostr_client.broadcast_event(&event)?;
 
         utils::event_to_repo_info(&event)
     }
@@ -129,19 +126,16 @@ impl Portan {
         repo_info: &RepoInfo,
         patch_info: PatchInfo,
     ) -> Result<(), Error> {
-        let event = EventPrepare {
-            pub_key: self.identity.public_key_str.clone(),
-            created_at: get_timestamp(),
-            kind: 128,
-            tags: vec![
-                vec!["e".to_string(), repo_info.id.to_string()],
-                vec!["n".to_string(), patch_info.name.clone()],
-            ],
-            content: serde_json::to_string(&patch_info)?,
-        }
-        .to_event(&self.identity, 0);
+        let tags = vec![
+            vec!["e".to_string(), repo_info.id.to_string()],
+            vec!["n".to_string(), patch_info.name.clone()],
+        ];
 
-        self.nostr_client.publish_event(&event)?;
+        let event = self
+            .identity
+            .make_event(128, &serde_json::to_string(&patch_info)?, &tags, 0);
+
+        self.nostr_client.broadcast_event(&event)?;
 
         Ok(())
     }
