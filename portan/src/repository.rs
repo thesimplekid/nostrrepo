@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::{errors::Error, types::PatchInfo, utils, Portan};
 
 use nostr_rust::{events::EventPrepare, req::ReqFilter, utils::get_timestamp};
@@ -19,7 +17,6 @@ pub struct RepoInfo {
     pub name: String,
     pub description: String,
     pub git_url: String,
-    pub local_path: Option<PathBuf>,
 }
 
 impl RepoInfo {
@@ -64,7 +61,7 @@ impl Portan {
 
         self.nostr_client.publish_event(&event)?;
 
-        Ok(utils::event_to_repo_info(&event)?)
+        utils::event_to_repo_info(&event)
     }
 
     pub fn get_repo_info(&mut self, repo_event_id: &str) -> Result<RepoInfo, Error> {
@@ -136,7 +133,10 @@ impl Portan {
             pub_key: self.identity.public_key_str.clone(),
             created_at: get_timestamp(),
             kind: 128,
-            tags: vec![vec!["e".to_string(), repo_info.id.to_string()]],
+            tags: vec![
+                vec!["e".to_string(), repo_info.id.to_string()],
+                vec!["n".to_string(), patch_info.name.clone()],
+            ],
             content: serde_json::to_string(&patch_info)?,
         }
         .to_event(&self.identity, 0);

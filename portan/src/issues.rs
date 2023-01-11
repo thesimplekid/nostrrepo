@@ -21,8 +21,11 @@ impl Portan {
             pub_key: self.identity.public_key_str.clone(),
             created_at: get_timestamp(),
             kind: 125,
-            tags: vec![vec!["e".to_string(), repo_info.id.to_string()]],
-            content: serde_json::to_string(&issue_info)?,
+            tags: vec![
+                vec!["e".to_string(), repo_info.id.to_string()],
+                vec!["n".to_string(), issue_info.title],
+            ],
+            content: issue_info.content,
         }
         .to_event(&self.identity, 0);
 
@@ -36,17 +39,18 @@ impl Portan {
     /// ignores events not published by repo owner or event author
     pub fn get_issue_status(
         &mut self,
-        issue_info: &IssueInfo,
+        issue_id: &str,
+        issue_author: &str,
         repo_info: &RepoInfo,
     ) -> Result<IssueStatus, Error> {
         let filter = ReqFilter {
             ids: None,
             authors: Some(vec![
-                issue_info.author.clone(),
+                issue_author.to_string(),
                 repo_info.owner_pub_key.clone(),
             ]),
             kinds: Some(vec![127]),
-            e: Some(vec![issue_info.id.to_string()]),
+            e: Some(vec![issue_id.to_string()]),
             p: None,
             since: None,
             until: None,
@@ -55,15 +59,14 @@ impl Portan {
 
         if let Ok(mut events) = self.nostr_client.get_events_of(vec![filter]) {
             // Only keeps elemants where status is published by issue author or repo owner
-            events.retain(|e| {
-                e.pub_key.eq(&issue_info.author) || e.pub_key.eq(&repo_info.owner_pub_key)
-            });
+            events
+                .retain(|e| e.pub_key.eq(&issue_author) || e.pub_key.eq(&repo_info.owner_pub_key));
             events.sort_by_key(|e| e.created_at);
             if let Some(last_event) = events.last() {
                 return Ok(serde_json::from_str(&last_event.content).unwrap());
             }
         }
-        return Ok(IssueStatus::Open);
+        Ok(IssueStatus::Open)
     }
 
     /// Converts a nostr event IssueInfo
@@ -75,36 +78,41 @@ impl Portan {
     ///
     /// let mut portan = Portan::default();
     /// let event = Event {
-    /// id: "32f0bfccca50c05062af6e37f462727a2a33d0c3237d5db56ca927af6a174a89".to_string(),
-    /// pub_key: "508786081ce5b80d31aba322c36b10c6cc2d7fc71a01bf91f4c4bd84814e66ce".to_string(),
-    /// created_at: 1673033095,
+    /// id: "916fd1e7d9d2b3c81181663d1a08c1d79b6e6f74bbbbdf166c6234b2d48f6514".to_string(),
+    /// pub_key: "04918dfc36c93e7db6cc0d60f37e1522f1c36b64d3f4b424c532d7c595febbc5".to_string(),
+    /// created_at: 1673388055,
     /// kind: 125,
     /// tags: [
     ///    [
     ///        "e".to_string(),
-    ///        "8d1e0b862ed783b09d8fe51f5a38b592df9fdf4faf1a5a3766f361fc1761d437".to_string(),
+    ///        "105d7de823e4394c08445d14904d379319c65ed341103ff0e4d95f86252cd83d".to_string(),
     ///    ].to_vec(),
+    /// [
+    ///     "n".to_string(),
+    ///     "First issue".to_string()
+    ///
+    /// ].to_vec()
     /// ].to_vec(),
-    /// content: "{\"title\":\"This is an issue\",\"content\":\"This is the content\"}".to_string(),
-    /// sig: "d69e44308acad774348231c30ac65bf0d7221eff1db83c241d55e0efa4f393e0d9843d7a00f6539b7cc5d5be991951dac656e43b0f8dd4caa4676712bf9624f6".to_string(),
+    /// content: "hello".to_string(),
+    /// sig: "9a80e48a40a63ba474b4698b2902c1d942a2b62b76ab8b4e7fb4620fe5c4321c3be38cfe67b69052c1ca8a97f216e223b50124f677f7d5120034c225a3948247".to_string(),
     /// };
     ///
     /// let repo_info = RepoInfo {
-    ///                     id: "8d1e0b862ed783b09d8fe51f5a38b592df9fdf4faf1a5a3766f361fc1761d437".to_string(),
-    ///                     owner_pub_key: "508786081ce5b80d31aba322c36b10c6cc2d7fc71a01bf91f4c4bd84814e66ce".to_string(),
-    ///                     name: "repo".to_string(),
-    ///                     description: "".to_string(),
-    ///                     git_url: "".to_string()
+    ///                     id: "105d7de823e4394c08445d14904d379319c65ed341103ff0e4d95f86252cd83d".to_string(),
+    ///                     owner_pub_key: "04918dfc36c93e7db6cc0d60f37e1522f1c36b64d3f4b424c532d7c595febbc5".to_string(),
+    ///                     name: "First issue".to_string(),
+    ///                     description: "hello".to_string(),
+    ///                     git_url: "".to_string(),
     ///                 };
     ///
     /// let issue_info = portan.event_to_issue_info(&event, &repo_info).unwrap();
     ///
     /// let i = IssueInfo {
-    ///     id: "32f0bfccca50c05062af6e37f462727a2a33d0c3237d5db56ca927af6a174a89".to_string(),
-    ///     author: "508786081ce5b80d31aba322c36b10c6cc2d7fc71a01bf91f4c4bd84814e66ce".to_string(),
-    ///     timestamp: 1673033095,
-    ///     title: "This is an issue".to_string(),
-    ///     content: "This is the content".to_string(),
+    ///     id: "916fd1e7d9d2b3c81181663d1a08c1d79b6e6f74bbbbdf166c6234b2d48f6514".to_string(),
+    ///     author: "04918dfc36c93e7db6cc0d60f37e1522f1c36b64d3f4b424c532d7c595febbc5".to_string(),
+    ///     timestamp: 1673388055,
+    ///     title: "First issue".to_string(),
+    ///     content: "hello".to_string(),
     ///     current_status: IssueStatus::Open
     /// };
     ///
@@ -119,12 +127,25 @@ impl Portan {
             return Err(Error::EventInvalid);
         }
 
-        let mut content: IssueInfo = serde_json::from_str(&event.content)?;
-        content.id = event.id.clone();
-        content.author = event.pub_key.clone();
-        content.timestamp = event.created_at.clone();
-        content.current_status = self.get_issue_status(&content, repo_info)?;
-        Ok(content)
+        let mut title: Option<String> = None;
+
+        for v in &event.tags {
+            if v[0].as_str() == "n" {
+                title = Some(v[1].to_string())
+            }
+        }
+        if title.is_none() {
+            return Err(Error::EventInvalid);
+        }
+
+        Ok(IssueInfo {
+            id: event.id.clone(),
+            author: event.pub_key.clone(),
+            timestamp: event.created_at,
+            title: title.unwrap(),
+            content: event.content.clone(),
+            current_status: self.get_issue_status(&event.id, &event.pub_key, repo_info)?,
+        })
     }
 
     /// Gets issues from nostr relays

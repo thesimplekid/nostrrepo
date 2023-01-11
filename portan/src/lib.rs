@@ -30,7 +30,7 @@ pub struct Portan {
 impl Default for Portan {
     fn default() -> Self {
         let path = ".env-dev";
-        if let Ok(_) = fs::metadata(path) {
+        if fs::metadata(path).is_ok() {
             dotenvy::from_path(path).expect("Messed up dev env");
         } else {
             dotenv().expect(".env file not found");
@@ -89,7 +89,7 @@ impl Portan {
     /// ```
     pub fn login(&mut self, priv_key: &str) -> Result<(), Error> {
         let hex_key = match priv_key.starts_with("nsec") {
-            true => from_hb_to_hex(ToBech32Kind::SecretKey, priv_key.clone()).unwrap(),
+            true => from_hb_to_hex(ToBech32Kind::SecretKey, priv_key).unwrap(),
             false => priv_key.to_string(),
         };
 

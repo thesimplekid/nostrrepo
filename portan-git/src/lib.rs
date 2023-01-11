@@ -65,23 +65,20 @@ pub fn get_log(local_repo: &PathBuf) -> Result<Vec<String>, Error> {
 
     Ok(String::from_utf8_lossy(&output.stdout)
         .to_string()
-        .split("\n")
+        .split('\n')
         .map(|x| x.to_string())
         .collect())
 }
 
 pub fn create_directory(path: &PathBuf) -> Result<(), Error> {
-    match fs::create_dir(path) {
-        Ok(_) => (),
-        Err(_) => (),
-    }
+    let _ = fs::create_dir(path);
 
     Ok(())
 }
 
 pub fn save_patch(path: &PathBuf, patch: &PatchInfo) -> Result<(), Error> {
     let mut file = File::create(
-        Path::new(path).join(format!("{}.patch", patch.title.clone().replace(" ", "-"))),
+        Path::new(path).join(format!("{}.patch", patch.name.clone().replace(' ', "-"))),
     )?;
     let data = patch.patch.clone();
     file.write_all(data.as_bytes())?;

@@ -7,6 +7,13 @@ license = "BSD 3-Clause OR Apache-2.0"
 rust-version = "1.65"
 
 
+[workspace]
+
+members = [
+    "portan",
+    "portan-git"
+]
+
 [dependencies]
 egui = "0.20.1"
 eframe = { version = "0.20.0", default-features = false, features = [

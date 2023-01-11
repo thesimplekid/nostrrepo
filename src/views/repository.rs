@@ -271,7 +271,7 @@ fn render_local_repository(
             let patch_info = PatchInfo {
                 id: "".to_string(),
                 author: "".to_string(),
-                title: local_data.title.to_string(),
+                name: local_data.title.to_string(),
                 description: local_data.description.to_string(),
                 patch: local_data.patch.to_string(),
             };

@@ -52,7 +52,8 @@ pub struct PatchInfo {
     pub id: String,
     #[serde(default, skip_serializing)]
     pub author: String,
-    pub title: String,
+    #[serde(default, skip_serializing)]
+    pub name: String,
     pub description: String,
     pub patch: String,
     // pub status: PatchStatus

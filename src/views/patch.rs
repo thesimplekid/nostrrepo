@@ -44,7 +44,7 @@ impl Patch {
         ui.add(Label::new(
             RichText::new(format!(
                 "{} #{}",
-                self.patch_info.title.clone(),
+                self.patch_info.name.clone(),
                 encode_id_to_number(&self.patch_info.id)
             ))
             .heading(),
@@ -101,7 +101,7 @@ pub fn render_repository_patches(
                             Label::new(
                                 RichText::new(format!(
                                     "{} #{}",
-                                    patch.title,
+                                    patch.name,
                                     encode_id_to_number(&patch.id)
                                 ))
                                 .heading(),

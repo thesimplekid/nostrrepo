@@ -22,8 +22,8 @@ content: <repo_descriptiopn>
 A publish issue event is a kind 125 with the an "e" tag of the `event id` of the publish repository, with the content being a JSON-serialized string of:
 ```json
 {
-    title: "",
-    description: ""
+    tags: [["e", "<event id of repo>"],["n", <issue_name>]]
+    content: <issue description>
 }
 ```
 
@@ -42,12 +42,14 @@ A publish issue status event is a kind 127 with the "e" tag the `event id` of th
 While there is no way to stop anyone from publishing an issue status those not published by the issue author or the repository owner should be ignored.
 
 ## Publish a patch
-A publish patch event is a kind 128 with the "e" tag the `event id` of the publish issue event and the content being a JSON-serialized sting of:
+A publish patch event is a kind 128 with the "e" tag the `event id` of the publish issue event and the content being a JSON-serialized string of description and the patch:
 ```json 
 {
-    title: "",
-    description: "",
-    patch: "<generated with git format-patch>"
+    tags: [["e", "<event id of repo publish>"], ["n", "<patch name>"]],
+    content: {
+        description: "",
+        patch: "<generated with git format-patch>"
+        }
 }
 ``` 
 
