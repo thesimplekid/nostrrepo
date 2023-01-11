@@ -14,11 +14,11 @@ use errors::Error;
 /// Clones a git repository
 /// ```rust
 /// use portan_git::clone_repository;
-/// use std::path::Path;
+/// use std::path::PathBuf;
 /// use url::Url;
 /// use std::str::FromStr;
 ///
-/// let path = Path::new("/home/thesimplekid/portan-testing/");
+/// let path = PathBuf::from_str("/home/thesimplekid/portan-testing/").unwrap();
 ///
 /// clone_repository(&Url::from_str("https://github.com/thesimplekid/bitcoin_palindrome_bot").unwrap(), &path).unwrap();
 /// ```
@@ -36,12 +36,12 @@ pub fn clone_repository(git_url: &Url, destination_path: &PathBuf) -> Result<Out
 /// Generate patch
 /// ```rust
 /// use portan_git::generate_patch;
-/// use std::path::Path;
+/// use std::path::PathBuf;
 /// use url::Url;
 /// use std::str::FromStr;
-/// let path = Path::new("/home/thesimplekid/portan-testing/bitcoin_palindrome_bot");
+/// let path = PathBuf::from_str("/home/thesimplekid/portan-testing/bitcoin_palindrome_bot").unwrap();
 ///
-/// let out = generate_patch(path, 1).unwrap();
+/// let out = generate_patch(&path, 1).unwrap();
 ///
 /// ```
 pub fn generate_patch(local_repo: &PathBuf, num_commits: usize) -> Result<String, Error> {
