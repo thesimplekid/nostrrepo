@@ -14,7 +14,7 @@ A publish repository event is kind 124 with the tag `n` of the `repo_name` and `
 ```json
 {
 tags: [[n, <repo_name>],[r, <git_url>]]
-content: <repo_descriptiopn>
+content: <repo_description>
 }
 ```
 
@@ -48,13 +48,13 @@ A publish patch event is a kind 128 with the "e" tag the `event id` of the publi
     tags: [["e", "<event id of repo publish>"], ["n", "<patch name>"]],
     content: {
         description: "",
-        patch: "<generated with git format-patch>"
-        }
+        patch: "<generated with git format-patch>",
+        },
 }
 ``` 
 
 ## TODO:
-- [ ] Alot of the content should be moved to tags 
+- [x] Alot of the content should be moved to tags 
 - [ ] Make async
 - [ ] Add example events
 - [ ] Efficiency improvements (few places that are a little hacky)

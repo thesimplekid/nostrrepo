@@ -78,7 +78,7 @@ impl Portan {
     }
 
     /// Login
-    /// ```
+    /// ```rust
     /// use portan::Portan;
     ///
     /// let priv_key = "a4c75131064cecdceac1275bc42310d02c5ddae643d83e075ee7941137c7e1c9";
@@ -100,11 +100,12 @@ impl Portan {
     }
 
     /// Get bech32 keys
-    /// ```
+    /// ```rust
     /// use portan::Portan;
     ///
+    ///
     /// let priv_key = "a4c75131064cecdceac1275bc42310d02c5ddae643d83e075ee7941137c7e1c9";
-    /// let mut portan = Portan::new(priv_key, vec!["ws://localhost:7000"]).unwrap();
+    /// let mut portan = Portan::new(priv_key, vec!["wss://relay.thesimplekid.com"]).unwrap();
     /// let (privkey, pubkey) = portan.get_bech32_keys().unwrap();
     ///
     /// assert_eq!(pubkey, "npub15nr2zfan778slpf3lhql42z4ldwzrvdxlq4d6jea7nz94hlc63ps2vza9s".to_string());

@@ -83,8 +83,9 @@ I can be contacted for comments or questions on nostr at _@thesimplekid.com (npu
 - [x] env var for relays
 - [x] Nostr key from env
 - [x] Select local folder that matches repo title
-- [ ] Add a DB
+- [ ] Should be able to comment on patches
 - [ ] Status of patches
+- [ ] Add a DB
 - [ ] Publish repo using hash of the first two commits
 - [ ] Show code of repo
 - [ ] Async
