@@ -9,8 +9,8 @@ use egui::{
 use anyhow::Result;
 
 use crate::{
-    views::issues::{render_issues, render_new_issue, Issue, IssueState},
-    views::patch::{render_repository_patches, Patch, PatchState},
+    ui::issues::{render_issues, render_new_issue, Issue, IssueState},
+    ui::patch::{render_repository_patches, Patch, PatchState},
 };
 use portan::{
     repository::RepoInfo,
@@ -27,7 +27,7 @@ pub struct Repository {
     issue_state: IssueState,
     new_issue_data: IssueInfo,
 
-    patch_state: PatchState,
+    // patch_state: PatchState,
     local_repo_data: LocalRepoData,
 
     issue_view: Issue,
@@ -82,8 +82,8 @@ impl Repository {
     ) -> Result<()> {
         ui.label("Repo");
         let owner = match portan.db.read_name(&self.repo_info.owner_pub_key) {
-            Ok(Some(value)) => value,
-            _ => truncated_npub(&self.repo_info.owner_pub_key).unwrap(),
+            Ok(value) => value,
+            Err(_) => truncated_npub(&self.repo_info.owner_pub_key).unwrap(),
         };
         let repo_slug = format!("{}/{}", owner, self.repo_info.name);
         ui.add_space(PADDING);

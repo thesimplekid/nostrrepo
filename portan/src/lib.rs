@@ -20,6 +20,8 @@ use nostr_rust::{
     Identity,
 };
 
+use async_trait::async_trait;
+
 use std::str::FromStr;
 
 pub struct Portan {
@@ -28,8 +30,8 @@ pub struct Portan {
     pub db: PortanDb,
 }
 
-impl Default for Portan {
-    fn default() -> Self {
+impl Portan {
+    async fn default() -> Self {
         let path = ".env-dev";
         if fs::metadata(path).is_ok() {
             dotenvy::from_path(path).expect("Messed up dev env");
@@ -50,7 +52,7 @@ impl Default for Portan {
         let relays = env::var("RELAYS").unwrap();
         let relays = serde_json::from_str::<Vec<&str>>(relays.trim()).unwrap();
 
-        let nostr_client = NostrClient::new(relays).unwrap();
+        let nostr_client = NostrClient::new(relays).await.unwrap();
         Portan {
             identity,
             nostr_client,
@@ -66,10 +68,10 @@ impl std::fmt::Debug for Portan {
 }
 
 impl Portan {
-    pub fn new(priv_key: &str, relay_urls: Vec<&str>) -> Result<Self, Error> {
+    pub async fn new(priv_key: &str, relay_urls: Vec<&str>) -> Result<Self, Error> {
         let identity = Identity::from_str(priv_key).unwrap();
 
-        let nostr_client = NostrClient::new(relay_urls)?;
+        let nostr_client = NostrClient::new(relay_urls).await?;
 
         Ok(Self {
             identity,
@@ -121,17 +123,17 @@ impl Portan {
     }
 
     /// Add a relay
-    pub fn add_relay(&mut self, new_relay: &str) -> Result<(), Error> {
-        Ok(self.nostr_client.add_relay(new_relay)?)
+    pub async fn add_relay(&mut self, new_relay: &str) -> Result<(), Error> {
+        Ok(self.nostr_client.add_relay(new_relay).await?)
     }
 
     /// Remove a relay
-    pub fn remove_relay(&mut self, relay: &str) -> Result<(), Error> {
-        Ok(self.nostr_client.remove_relay(relay)?)
+    pub async fn remove_relay(&mut self, relay: &str) -> Result<(), Error> {
+        Ok(self.nostr_client.remove_relay(relay).await?)
     }
 
     /// Gets petnames of pubkeys in list
-    pub fn get_petnames(&mut self, pubkeys: Vec<String>) -> Result<(), Error> {
+    pub async fn get_petnames(&mut self, pubkeys: Vec<String>) -> Result<(), Error> {
         let filter = ReqFilter {
             ids: None,
             authors: Some(pubkeys),
@@ -143,7 +145,7 @@ impl Portan {
             limit: None,
         };
 
-        if let Ok(events) = self.nostr_client.get_events_of(vec![filter]) {
+        if let Ok(events) = self.nostr_client.get_events_of(vec![filter]).await {
             if !events.is_empty() {
                 for event in events {
                     let content: Value = serde_json::from_str(&event.content)?;

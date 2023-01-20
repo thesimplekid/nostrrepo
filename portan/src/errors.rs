@@ -28,6 +28,9 @@ pub enum Error {
 
     #[error("Database error")]
     DBError(redb::Error),
+
+    #[error("Missing value")]
+    MissingValue,
 }
 
 impl From<serde_json::Error> for Error {

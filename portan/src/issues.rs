@@ -9,10 +9,11 @@ use nostr_rust::{
     events::Event,
     req::ReqFilter,
 };
+use nostr_types::{Id, PublicKeyHex};
 
 impl Portan {
     /// Publish an issue event
-    pub fn publish_issue(
+    pub async fn publish_issue(
         &mut self,
         repo_info: &RepoInfo,
         issue_info: IssueInfo,
@@ -24,15 +25,15 @@ impl Portan {
 
         let event = self.identity.make_event(125, &issue_info.content, &tags, 0);
 
-        self.nostr_client.broadcast_event(&event)?;
-        let issue_info = self.event_to_issue_info(&event, repo_info)?;
+        self.nostr_client.broadcast_event(&event).await?;
+        let issue_info = self.event_to_issue_info(&event, repo_info).await?;
         Ok(issue_info)
     }
 
     /// Gets the current status of the issue
     /// requests status events from relays and finds more recent
     /// ignores events not published by repo owner or event author
-    pub fn get_issue_status(
+    pub async fn get_issue_status(
         &mut self,
         issue_id: &str,
         issue_author: &str,
@@ -42,7 +43,7 @@ impl Portan {
             ids: None,
             authors: Some(vec![
                 issue_author.to_string(),
-                repo_info.owner_pub_key.clone(),
+                repo_info.owner_pub_key.to_string().clone(),
             ]),
             kinds: Some(vec![127]),
             e: Some(vec![issue_id.to_string()]),
@@ -52,10 +53,11 @@ impl Portan {
             limit: None,
         };
 
-        if let Ok(mut events) = self.nostr_client.get_events_of(vec![filter]) {
+        if let Ok(mut events) = self.nostr_client.get_events_of(vec![filter]).await {
             // Only keeps elemants where status is published by issue author or repo owner
-            events
-                .retain(|e| e.pub_key.eq(&issue_author) || e.pub_key.eq(&repo_info.owner_pub_key));
+            events.retain(|e| {
+                e.pub_key.eq(&issue_author) || e.pub_key.eq(&repo_info.owner_pub_key.to_string())
+            });
             events.sort_by_key(|e| e.created_at);
             if let Some(last_event) = events.last() {
                 return Ok(serde_json::from_str(&last_event.content).unwrap());
@@ -113,7 +115,7 @@ impl Portan {
     ///
     /// assert_eq!(i, issue_info);
     /// ```
-    pub fn event_to_issue_info(
+    pub async fn event_to_issue_info(
         &mut self,
         event: &Event,
         repo_info: &RepoInfo,
@@ -134,17 +136,19 @@ impl Portan {
         }
 
         Ok(IssueInfo {
-            id: event.id.clone(),
-            author: event.pub_key.clone(),
+            id: Some(Id::try_from_hex_string(&event.id.clone()).unwrap()),
+            author: Some(PublicKeyHex(event.pub_key.clone())),
             timestamp: event.created_at,
             title: title.unwrap(),
             content: event.content.clone(),
-            current_status: self.get_issue_status(&event.id, &event.pub_key, repo_info)?,
+            current_status: self
+                .get_issue_status(&event.id, &event.pub_key, repo_info)
+                .await?,
         })
     }
 
     /// Gets issues from nostr relays
-    pub fn get_issues(&mut self, repo_info: &RepoInfo) -> Result<Vec<IssueInfo>, Error> {
+    pub async fn get_issues(&mut self, repo_info: &RepoInfo) -> Result<Vec<IssueInfo>, Error> {
         let filter = ReqFilter {
             ids: None,
             authors: None,
@@ -156,20 +160,21 @@ impl Portan {
             limit: None,
         };
 
-        if let Ok(events) = self.nostr_client.get_events_of(vec![filter]) {
+        if let Ok(events) = self.nostr_client.get_events_of(vec![filter]).await {
             if !events.is_empty() {
-                let issues: Result<Vec<IssueInfo>, _> = events
-                    .into_iter()
-                    .map(|e| self.event_to_issue_info(&e, repo_info))
-                    .collect();
-                return issues;
+                let mut issues = vec![];
+                for event in &events {
+                    issues.push(self.event_to_issue_info(&event, repo_info).await?);
+                }
+
+                return Ok(issues);
             }
         }
         Ok(vec![])
     }
 
     /// Get issue comments from nostr
-    pub fn get_issue_comments(
+    pub async fn get_issue_comments(
         &mut self,
         issue_id: &str,
     ) -> Result<Vec<IssueComment>, serde_json::Error> {
@@ -184,13 +189,13 @@ impl Portan {
             limit: None,
         };
 
-        if let Ok(events) = self.nostr_client.get_events_of(vec![filter]) {
+        if let Ok(events) = self.nostr_client.get_events_of(vec![filter]).await {
             if !events.is_empty() {
                 let mut issues: Vec<IssueComment> = events
                     .into_iter()
                     .filter(|e| e.verify().is_ok())
                     .map(|e| IssueComment {
-                        author: to_bech32(ToBech32Kind::PublicKey, &e.pub_key).unwrap(),
+                        author: Some(PublicKeyHex(e.pub_key)),
                         timestamp: e.created_at,
                         description: e.content,
                     })
@@ -205,19 +210,22 @@ impl Portan {
     /// Get issue response from nostr relays
     /// Issue responses is a enum so that both issue comments and status updates
     /// can be in one vec
-    pub fn get_issue_responses(&mut self, issue_id: &str) -> Result<Vec<IssueResponse>, Error> {
+    pub async fn get_issue_responses(
+        &mut self,
+        issue_id: &Id,
+    ) -> Result<Vec<IssueResponse>, Error> {
         let filter = ReqFilter {
             ids: None,
             authors: None,
             kinds: Some(vec![126, 127]),
-            e: Some(vec![issue_id.to_string()]),
+            e: Some(vec![issue_id.as_hex_string()]),
             p: None,
             since: None,
             until: None,
             limit: None,
         };
 
-        if let Ok(events) = self.nostr_client.get_events_of(vec![filter]) {
+        if let Ok(events) = self.nostr_client.get_events_of(vec![filter]).await {
             if !events.is_empty() {
                 let mut events = events;
                 events.sort_by_key(|e| e.created_at);
@@ -227,12 +235,12 @@ impl Portan {
                     if event.verify().is_ok() {
                         match event.kind {
                             126 => issues.push(IssueResponse::Comment(IssueComment {
-                                author: to_bech32(ToBech32Kind::PublicKey, &event.pub_key).unwrap(),
+                                author: Some(PublicKeyHex(event.pub_key)),
                                 timestamp: event.created_at,
                                 description: event.content,
                             })),
                             127 => issues.push(IssueResponse::Status(StatusUpdate {
-                                author: event.pub_key,
+                                author: Some(PublicKeyHex(event.pub_key)),
                                 timestamp: event.created_at,
                                 status: serde_json::from_str(&event.content).unwrap(),
                             })),
@@ -247,7 +255,7 @@ impl Portan {
     }
 
     /// Publish issue comment to nostr
-    pub fn publish_issue_comment(
+    pub async fn publish_issue_comment(
         &mut self,
         issue_id: &str,
         content: &str,
@@ -256,17 +264,17 @@ impl Portan {
 
         let event = self.identity.make_event(126, content, &tags, 0);
 
-        self.nostr_client.broadcast_event(&event)?;
+        self.nostr_client.broadcast_event(&event).await?;
 
         Ok(IssueComment {
-            author: event.pub_key,
+            author: Some(PublicKeyHex(event.pub_key)),
             timestamp: event.created_at,
             description: event.content,
         })
     }
 
     /// Publish close issue to nostr
-    pub fn publish_close_issue(
+    pub async fn publish_close_issue(
         &mut self,
         issue_id: &str,
         comment: &str,
@@ -275,7 +283,7 @@ impl Portan {
         let comment = comment.trim();
 
         if !comment.is_empty() {
-            self.publish_issue_comment(issue_id, comment)?;
+            self.publish_issue_comment(issue_id, comment).await?;
         }
 
         let content = match completed {
@@ -289,17 +297,17 @@ impl Portan {
             .identity
             .make_event(127, &serde_json::to_string(&content)?, &tags, 0);
 
-        self.nostr_client.broadcast_event(&event)?;
+        self.nostr_client.broadcast_event(&event).await?;
 
         Ok(IssueResponse::Status(StatusUpdate {
-            author: event.pub_key,
+            author: Some(PublicKeyHex(event.pub_key)),
             timestamp: event.created_at,
             status: content,
         }))
     }
 
     /// Publish a reopen issue event
-    pub fn publish_reopen_issue(
+    pub async fn publish_reopen_issue(
         &mut self,
         issue_id: &str,
         comment: &str,
@@ -307,7 +315,7 @@ impl Portan {
         let comment = comment.trim();
 
         if !comment.is_empty() {
-            self.publish_issue_comment(issue_id, comment)?;
+            self.publish_issue_comment(issue_id, comment).await?;
         }
 
         let tags = vec![vec!["e".to_string(), issue_id.to_string()]];
@@ -315,10 +323,10 @@ impl Portan {
             self.identity
                 .make_event(127, &serde_json::to_string(&IssueStatus::Open)?, &tags, 0);
 
-        self.nostr_client.broadcast_event(&event)?;
+        self.nostr_client.broadcast_event(&event).await?;
 
         Ok(IssueResponse::Status(StatusUpdate {
-            author: event.pub_key,
+            author: Some(PublicKeyHex(event.pub_key)),
             timestamp: event.created_at,
             status: IssueStatus::Open,
         }))
