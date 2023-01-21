@@ -27,11 +27,10 @@ use std::str::FromStr;
 pub struct Portan {
     pub identity: Identity,
     pub nostr_client: NostrClient,
-    pub db: PortanDb,
 }
 
 impl Portan {
-    async fn default() -> Self {
+    pub async fn new() -> Self {
         let path = ".env-dev";
         if fs::metadata(path).is_ok() {
             dotenvy::from_path(path).expect("Messed up dev env");
@@ -51,12 +50,12 @@ impl Portan {
 
         let relays = env::var("RELAYS").unwrap();
         let relays = serde_json::from_str::<Vec<&str>>(relays.trim()).unwrap();
-
         let nostr_client = NostrClient::new(relays).await.unwrap();
+        //nostr_client.publish_text_note(&identity, "hi", &[vec!["".to_string()]], 0);
+
         Portan {
             identity,
             nostr_client,
-            db: PortanDb::new(),
         }
     }
 }
@@ -68,6 +67,7 @@ impl std::fmt::Debug for Portan {
 }
 
 impl Portan {
+    /*
     pub async fn new(priv_key: &str, relay_urls: Vec<&str>) -> Result<Self, Error> {
         let identity = Identity::from_str(priv_key).unwrap();
 
@@ -79,6 +79,7 @@ impl Portan {
             db: PortanDb::new(),
         })
     }
+    */
 
     /// Login
     /// ```rust
@@ -149,6 +150,7 @@ impl Portan {
             if !events.is_empty() {
                 for event in events {
                     let content: Value = serde_json::from_str(&event.content)?;
+                    /*
                     if let Some(name) = content.get("name") {
                         self.db.write_name(
                             &event.pub_key,
@@ -158,6 +160,7 @@ impl Portan {
                         // TODO: Maybe should just not add
                         //self.petnames.insert(event.pub_key, None);
                     };
+                    */
                 }
             }
         }

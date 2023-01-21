@@ -61,7 +61,8 @@ impl Portan {
 
         self.nostr_client.broadcast_event(&event).await?;
 
-        self.db.write_repo_info(&self.event_to_repo_info(&event)?)
+        //self.db.write_repo_info(&self.event_to_repo_info(&event)?)
+        Ok(())
     }
 
     pub async fn get_repo_info(&mut self, repo_event_id: &str) -> Result<RepoInfo, Error> {
@@ -93,7 +94,7 @@ impl Portan {
         let filter = ReqFilter {
             ids: None,
             authors,
-            kinds: Some(vec![124]),
+            kinds: None, // Some(vec![124]),
             e: None,
             p: None,
             since: None,
@@ -104,14 +105,16 @@ impl Portan {
         if let Ok(events) = self.nostr_client.get_events_of(vec![filter]).await {
             if !events.is_empty() {
                 // Iterates over the events to find nostr pub keys that haven't been seen
+                /*
                 let new_keys = events.iter().fold(vec![], |mut v, e| {
                     if self.db.read_name(&e.pub_key).is_err() {
                         v.push(e.pub_key.clone());
                     }
                     v
                 });
+                */
 
-                self.get_petnames(new_keys).await?;
+                //self.get_petnames(new_keys).await?;
                 let repos = events
                     .iter()
                     .filter_map(|event| self.event_to_repo_info(event).ok())
@@ -119,6 +122,8 @@ impl Portan {
 
                 return Ok(repos);
             }
+        } else {
+            println!("Some error is happening");
         }
 
         Ok(vec![])
@@ -161,7 +166,8 @@ impl Portan {
                     .iter()
                     .filter_map(|e| utils::event_to_patch_info(e).ok())
                     .collect::<Vec<PatchInfo>>();
-                let new_keys = events.iter().fold(vec![], |mut v, e| {
+                /*
+                    let new_keys = events.iter().fold(vec![], |mut v, e| {
                     if self.db.read_name(&e.pub_key).is_err() {
                         v.push(e.pub_key.clone());
                     }
@@ -169,6 +175,7 @@ impl Portan {
                 });
 
                 self.get_petnames(new_keys).await?;
+                */
                 return Ok(patches);
             }
         }

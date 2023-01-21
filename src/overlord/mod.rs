@@ -1,12 +1,14 @@
 use crate::comms::{ToMinionMessage, ToOverlordMessage};
 use crate::errors::Error;
 use crate::globals::GLOBALS;
+use crate::repositories;
 
 use nostr_types::{
     Event, EventKind, Id, IdHex, PreEvent, PrivateKey, PublicKey, PublicKeyHex, Tag, Unixtime, Url,
 };
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
+use std::thread;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::{select, task};
@@ -158,8 +160,6 @@ impl Overlord {
             */
         }
 
-        /*
-
         'mainloop: loop {
             match self.loop_handler().await {
                 Ok(keepgoing) => {
@@ -173,9 +173,30 @@ impl Overlord {
                 }
             }
         }
-        */
 
         Ok(())
+    }
+
+    #[allow(unused_assignments)]
+    async fn loop_handler(&mut self) -> Result<bool, Error> {
+        let mut keepgoing: bool = true;
+
+        tracing::trace!("overlord looping");
+
+        // Listen on inbox, and dying minions
+        select! {
+                message = self.inbox.recv() => {
+                    let message = match message {
+                        Some(bm) => bm,
+                        None => {
+                            // All senders dropped, or one of them closed.
+                            return Ok(false);
+                        }
+                    };
+                    keepgoing = self.handle_message(message).await?;
+                },
+        }
+        Ok(keepgoing)
     }
 
     async fn handle_message(&mut self, message: ToOverlordMessage) -> Result<bool, Error> {
@@ -185,6 +206,22 @@ impl Overlord {
                 println!("{:?}", id);
             }
             ToOverlordMessage::Shutdown => (),
+            ToOverlordMessage::PublishRepository(repo_content) => {
+                repositories::publish_repository(repo_content)
+                    .await
+                    .unwrap()
+            }
+            ToOverlordMessage::GetPublishedRepositories => {
+                let repos = repositories::get_published_repositories(None)
+                    .await
+                    .unwrap();
+                for r in repos {
+                    GLOBALS
+                        .repositories
+                        .repositories
+                        .insert(Id::try_from_hex_string(&r.id)?, r);
+                }
+            }
         }
 
         Ok(true)
