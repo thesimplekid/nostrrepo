@@ -14,7 +14,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::{select, task};
 
 pub struct Overlord {
-    //to_minions: Sender<ToMinionMessage>,
+    to_minions: Sender<ToMinionMessage>,
     inbox: UnboundedReceiver<ToOverlordMessage>,
     // All the minion tasks running.
     //minions: task::JoinSet<()>,
@@ -26,7 +26,7 @@ impl Overlord {
     pub fn new(inbox: UnboundedReceiver<ToOverlordMessage>) -> Overlord {
         let to_minions = GLOBALS.to_minions.clone();
         Overlord {
-            //to_minions,
+            to_minions,
             inbox,
             //minions: task::JoinSet::new(),
             //minions_task_url: HashMap::new(),
@@ -67,6 +67,7 @@ impl Overlord {
     }
 
     pub async fn run_inner(&mut self) -> Result<(), Error> {
+        // repositories::populate_published_repositories().await?;
         // Load signer from settings
         //GLOBALS.signer.write().await.load_from_settings().await;
 
@@ -200,6 +201,7 @@ impl Overlord {
     }
 
     async fn handle_message(&mut self, message: ToOverlordMessage) -> Result<bool, Error> {
+        println!("Handle {:?}", message);
         match message {
             ToOverlordMessage::PublishIssueComment(comment, id) => {
                 println!("{}", comment);
@@ -207,6 +209,7 @@ impl Overlord {
             }
             ToOverlordMessage::Shutdown => (),
             ToOverlordMessage::PublishRepository(repo_content) => {
+                println!("got the message");
                 repositories::publish_repository(repo_content)
                     .await
                     .unwrap()
@@ -221,6 +224,7 @@ impl Overlord {
                         .repositories
                         .insert(Id::try_from_hex_string(&r.id)?, r);
                 }
+                println!("Got repos");
             }
         }
 

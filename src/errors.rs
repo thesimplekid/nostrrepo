@@ -1,4 +1,5 @@
 use thiserror::Error;
+use tokio::task::JoinError;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -31,6 +32,18 @@ pub enum Error {
 
     #[error("Nostr Types error")]
     NostrTypesError(nostr_types::Error),
+
+    #[error("DB Error")]
+    DBError(redb::Error),
+
+    #[error("Join error")]
+    JoinError,
+
+    #[error("Missing Nostr Client")]
+    MissingNosreClient,
+
+    #[error("Missing Database")]
+    MissingDb,
 }
 
 impl From<nostr_types::Error> for Error {
@@ -61,11 +74,15 @@ impl From<nostr_rust::nips::nip1::NIP1Error> for Error {
         Self::NostrRustError(err)
     }
 }
-/*
 
 impl From<redb::Error> for Error {
     fn from(err: redb::Error) -> Self {
         Self::DBError(err)
     }
 }
-*/
+
+impl From<JoinError> for Error {
+    fn from(_err: JoinError) -> Self {
+        Self::JoinError
+    }
+}

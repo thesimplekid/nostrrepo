@@ -8,6 +8,7 @@ mod globals;
 mod issues;
 mod nostr;
 mod overlord;
+mod people;
 mod repositories;
 mod ui;
 

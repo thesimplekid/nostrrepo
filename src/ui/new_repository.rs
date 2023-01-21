@@ -52,17 +52,18 @@ pub(super) fn update(
     ui.text_edit_singleline(&mut app.new_repo_git_url);
 
     if ui.button("Publish").clicked() {
+        println!("Publish repository clicked");
         let repo_content = RepoEventContent {
             name: app.new_repo_name.clone(),
             description: app.new_repo_description.clone(),
             git_url: app.new_repo_description.clone(),
         };
-        app.new_repo_name = "".to_string();
-        app.new_repo_description = "".to_string();
-        app.new_repo_description = "".to_string();
         let _ = GLOBALS
             .to_overlord
             .send(ToOverlordMessage::PublishRepository(repo_content));
+        app.new_repo_name = "".to_string();
+        app.new_repo_description = "".to_string();
+        app.new_repo_description = "".to_string();
         // TODO: Publish
         //if let Ok(_repo_info) = portan.publish_repository(repo_info.clone()) {
         // *explore = Explore::new(portan).unwrap();

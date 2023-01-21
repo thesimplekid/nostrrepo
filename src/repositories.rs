@@ -2,8 +2,9 @@ use dashmap::DashMap;
 use nostr_rust::{events::Event, req::ReqFilter};
 use nostr_types::{Id, PublicKeyHex, Url};
 use portan::repository::{RepoEventContent, RepoInfo};
+use tracing::event;
 
-use crate::{db, errors::Error, globals::GLOBALS};
+use crate::{db, errors::Error, globals::GLOBALS, people};
 
 #[derive(Debug, Default)]
 pub struct Repositories {
@@ -20,6 +21,7 @@ pub struct Repositories {
 }
 
 pub async fn publish_repository(repo_info: RepoEventContent) -> Result<(), Error> {
+    println!("Publish repository");
     let tags = vec![
         vec!["r".to_string(), repo_info.git_url],
         vec!["n".to_string(), repo_info.name],
@@ -37,11 +39,12 @@ pub async fn publish_repository(repo_info: RepoEventContent) -> Result<(), Error
         .lock()
         .await
         .as_mut()
-        .unwrap()
+        .ok_or(Error::EventInvalid)?
         .broadcast_event(&event)
         .await?;
 
     let repo_info = event_to_repo_info(&event)?;
+    println!("{:?}", repo_info);
 
     db::write_repo_info(repo_info).await?;
 
@@ -67,26 +70,25 @@ pub async fn get_published_repositories(
         .lock()
         .await
         .as_mut()
-        .unwrap()
+        .ok_or(Error::EventInvalid)?
         .get_events_of(vec![filter])
         .await
     {
         if !events.is_empty() {
-            // Iterates over the events to find nostr pub keys that haven't been seen
-            /*
-            let new_keys = events.iter().fold(vec![], |mut v, e| {
-                if self.db.read_name(&e.pub_key).is_err() {
-                    v.push(e.pub_key.clone());
-                }
-                v
-            });
-            */
-
             //self.get_petnames(new_keys).await?;
             let repos = events
                 .iter()
                 .filter_map(|event| event_to_repo_info(event).ok())
                 .collect::<Vec<RepoInfo>>();
+
+            // Iterates over repos to check if author is already in DB
+            let mut new_keys = vec![];
+            for r in &repos {
+                if db::read_name(r.owner_pub_key.clone()).await.is_err() {
+                    new_keys.push(r.owner_pub_key.clone());
+                }
+            }
+            people::populate_names(new_keys).await?;
 
             return Ok(repos);
         }
@@ -123,4 +125,16 @@ pub fn event_to_repo_info(event: &Event) -> Result<RepoInfo, Error> {
         description: event.content.clone(),
         git_url: Url::new(&git_url.unwrap()),
     })
+}
+
+pub async fn populate_published_repositories() -> Result<(), Error> {
+    let repos = get_published_repositories(None).await.unwrap();
+    for r in repos {
+        GLOBALS
+            .repositories
+            .repositories
+            .insert(Id::try_from_hex_string(&r.id)?, r);
+    }
+
+    Ok(())
 }
