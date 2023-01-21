@@ -83,7 +83,7 @@ impl Repository {
         ui.label("Repo");
         let owner = match portan.db.read_name(&self.repo_info.owner_pub_key) {
             Ok(value) => value,
-            Err(_) => truncated_npub(&self.repo_info.owner_pub_key).unwrap(),
+            Err(_) => truncated_npub(&self.repo_info.owner_pub_key)?,
         };
         let repo_slug = format!("{}/{}", owner, self.repo_info.name);
         ui.add_space(PADDING);
@@ -222,14 +222,14 @@ fn render_local_repository(
     } else {
 
         // This should be a config option or something not declared here
-        portan_git::create_directory(nostrrepo_folder).unwrap();
+        portan_git::create_directory(nostrrepo_folder)?;
 
 
         let path = nostrrepo_folder.join(repo_info.name.clone());
         match fs::metadata(&path) {
             Ok(_) => {
                 ui.add(Label::new(RichText::new(format!("Local repo at: {}", path.display()))));
-                local_data.git_log = portan_git::get_log(&path).unwrap();
+                local_data.git_log = portan_git::get_log(&path)?;
             },
             Err(_) => {
                 ui.label("Looks like there is no matching local repo.\nYou may need to clone the repo");
@@ -259,7 +259,7 @@ fn render_local_repository(
             local_data.patch = portan_git::generate_patch(
                 &path,
                 local_data.commit_num + 1,
-            ).unwrap();
+            )?;
         }
     }
     if !local_data.patch.is_empty() {
@@ -275,7 +275,7 @@ fn render_local_repository(
                 description: local_data.description.to_string(),
                 patch: local_data.patch.to_string(),
             };
-            portan.publish_patch(repo_info, patch_info).unwrap();
+            portan.publish_patch(repo_info, patch_info)?;
         }
 
         ScrollArea::vertical()

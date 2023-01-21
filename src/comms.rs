@@ -1,4 +1,5 @@
 use nostr_types::{Event, Id, IdHex, PublicKey, PublicKeyHex, Tag};
+use portan::repository::RepoEventContent;
 
 /// This is a message sent to the Overlord
 #[derive(Debug, Clone)]
@@ -28,6 +29,8 @@ pub enum ToOverlordMessage {
     UnlockKey(String),
     UpdateMetadata(PublicKeyHex),
     */
+    PublishRepository(RepoEventContent),
+    GetPublishedRepositories,
     PublishIssueComment(String, Id),
     Shutdown,
 }

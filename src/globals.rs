@@ -1,5 +1,6 @@
 use dashmap::DashMap;
 use lazy_static::lazy_static;
+use nostr_rust::{nostr_client::Client, Identity};
 use nostr_types::{Event, Id, PublicKeyHex, Url};
 use portan::{repository::RepoInfo, types::IssueResponse, Portan};
 use redb::{Database, ReadableTable, TableDefinition};
@@ -16,7 +17,7 @@ pub struct Globals {
     pub db: Mutex<Option<Database>>,
     /// This is a broadcast channel. All Minions should listen on it.
     /// To create a receiver, just run .subscribe() on it.
-    pub to_minions: broadcast::Sender<ToMinionMessage>,
+    //pub to_minions: broadcast::Sender<ToMinionMessage>,
 
     /// This is a mpsc channel. The Overlord listens on it.
     /// To create a sender, just clone() it.
@@ -42,17 +43,20 @@ pub struct Globals {
     // Issue comments currently in memory
     pub issue_responses: RwLock<IssueResponses>,
 
-    pub portan: RwLock<Option<Portan>>,
+    // Nostr
+    pub identity: Mutex<Option<Identity>>,
+    pub nostr_client: Mutex<Option<Client>>,
+    // pub portan: Mutex<Option<Portan>>,
 }
 
 lazy_static! {
     pub static ref GLOBALS: Globals = {
         let (to_overlord, tmp_overlord_receiver) = mpsc::unbounded_channel();
         // Setup a communications channel from the Overlord to the Minions.
-        let (to_minions, _) = broadcast::channel(256);
-        let priv_key = "79dcaa01e65f3044482766076a7dc4a073226587aa7eb7ed855f4fddbf312e22";
+        // let (to_minions, _) = broadcast::channel(256);
+
         Globals {
-            to_minions,
+            //to_minions,
             to_overlord,
             tmp_overlord_receiver: Mutex::new(Some(tmp_overlord_receiver)),
             db: Mutex::new(None),
@@ -68,7 +72,10 @@ lazy_static! {
 
             people: DashMap::new(),
 
-            portan: RwLock::new(None),
+            identity: Mutex::new(None),
+            nostr_client: Mutex::new(None),
+
+            //portan: Mutex::new(None),
         }
     };
 }
