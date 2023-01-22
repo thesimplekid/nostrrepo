@@ -5,6 +5,7 @@ use portan::repository::{RepoEventContent, RepoInfo};
 
 use crate::{db, errors::Error, globals::GLOBALS};
 
+/*
 #[derive(Debug, Default)]
 pub struct Repositories {
     pub repositories: DashMap<Id, RepoInfo>, //pub repo_info: RepoInfo,
@@ -18,6 +19,7 @@ pub struct Repositories {
                                              // issue_view: Issue,
                                              // patch_view: Patch,
 }
+*/
 
 pub async fn publish_repository(repo_info: RepoEventContent) -> Result<(), Error> {
     let tags = vec![
@@ -130,7 +132,6 @@ pub async fn populate_published_repositories() -> Result<(), Error> {
     let repos = get_published_repositories(None).await.unwrap();
     for r in repos {
         GLOBALS
-            .repositories
             .repositories
             .insert(Id::try_from_hex_string(&r.id)?, r);
     }

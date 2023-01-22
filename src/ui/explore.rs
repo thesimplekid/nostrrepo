@@ -61,7 +61,7 @@ pub(super) fn update(
     ScrollArea::vertical()
         .auto_shrink([false; 2])
         .show(ui, |ui| {
-            for r in &GLOBALS.repositories.repositories {
+            for r in &GLOBALS.repositories {
                 ui.add_space(PADDING);
 
                 let owner = match &GLOBALS.people.get(&r.owner_pub_key) {

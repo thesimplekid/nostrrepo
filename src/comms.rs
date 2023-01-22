@@ -5,7 +5,6 @@ use portan::repository::RepoEventContent;
 #[derive(Debug, Clone)]
 pub enum ToOverlordMessage {
     /*
-    AddRelay(String),
     DeletePub,
     FollowBech32(String, String),
     FollowHex(String, String),
@@ -32,6 +31,9 @@ pub enum ToOverlordMessage {
     PublishRepository(RepoEventContent),
     GetPublishedRepositories,
     PublishIssueComment(String, Id),
+    AddRelay(String),
+    RemoveRelay(String),
+    Login(String),
     Shutdown,
 }
 

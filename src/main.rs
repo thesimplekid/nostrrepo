@@ -8,7 +8,9 @@ mod globals;
 mod issues;
 mod nostr;
 mod overlord;
+mod people;
 mod repositories;
+mod settings;
 mod ui;
 
 use comms::ToOverlordMessage;
@@ -40,6 +42,10 @@ fn main() -> Result<(), Error> {
     });
 
     if let Err(e) = ui::run() {
+        tracing::error!("{}", e);
+    }
+    // Tell the async parties to close down
+    if let Err(e) = initiate_shutdown() {
         tracing::error!("{}", e);
     }
 

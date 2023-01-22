@@ -1,4 +1,6 @@
 use crate::{errors::Error, globals::GLOBALS};
+use dashmap::DashMap;
+use nostr_types::PublicKeyHex;
 use portan::repository::RepoInfo;
 use redb::{Database, ReadableTable, TableDefinition};
 use tokio::task::spawn_blocking;
@@ -52,3 +54,33 @@ pub fn read_repo_info(id: &str) -> Result<RepoInfo, Error> {
     Err(Error::MissingValue)
 }
 */
+
+pub async fn read_name(pubkey: PublicKeyHex) -> Result<String, Error> {
+    let name = spawn_blocking(move || {
+        let db = GLOBALS.db.blocking_lock();
+        let read_txn = db.as_ref().unwrap().begin_read()?;
+        let table = read_txn.open_table(NAMESTABLE)?;
+        if let Some(name) = table.get(&pubkey.to_string())? {
+            return Ok(name.to_string());
+        } else {
+            Err(Error::MissingValue)
+        }
+    })
+    .await??;
+    Ok(name)
+}
+
+pub async fn add_names(names: DashMap<PublicKeyHex, String>) -> Result<(), Error> {
+    let _ = spawn_blocking(move || {
+        let db = GLOBALS.db.blocking_lock();
+        let write_txn = db.as_ref().expect("Missing DB").begin_write()?;
+        for (k, n) in names {
+            let mut table = write_txn.open_table(NAMESTABLE)?;
+            table.insert(&k.to_string(), &n)?;
+        }
+        write_txn.commit()
+    })
+    .await?;
+
+    Ok(())
+}

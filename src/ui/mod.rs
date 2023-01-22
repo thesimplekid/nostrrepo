@@ -10,7 +10,7 @@ pub mod issues;
 pub mod new_repository;
 // pub mod patch;
 //pub mod repository;
-//pub mod settings;
+pub mod settings;
 
 pub fn run() -> Result<(), Error> {
     let native_options = eframe::NativeOptions::default();
@@ -51,6 +51,12 @@ pub struct NostrRepoUi {
     issue_info: Option<IssueInfo>,
 
     public_key: Option<PublicKeyHex>,
+
+    // Settings vars
+    relays: Vec<String>,
+    new_relay: String,
+    new_priv_key: String,
+    show_keys: bool,
 }
 
 impl NostrRepoUi {
@@ -79,6 +85,10 @@ impl NostrRepoUi {
             issue_info: None,
             new_issue_comment: "".to_string(),
             public_key: None,
+            relays: Vec::new(),
+            new_relay: "".to_string(),
+            new_priv_key: "".to_string(),
+            show_keys: false,
         }
     }
 
@@ -149,6 +159,7 @@ impl eframe::App for NostrRepoUi {
             Page::Issues(_) => issues::update(self, ctx, _frame, ui),
             Page::Issue(_) => issue::update(self, ctx, _frame, ui),
             Page::NewRepo => new_repository::update(self, ctx, _frame, ui),
+            Page::Settings => settings::update(self, ctx, _frame, ui),
             _ => (),
         });
     }

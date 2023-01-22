@@ -13,7 +13,6 @@ use portan::{
     repository::RepoInfo,
     types::{IssueInfo, IssueResponse, IssueStatus},
     utils::{encode_id_to_number, truncated_npub},
-    Portan,
 };
 use serde::{Deserialize, Serialize};
 
@@ -45,16 +44,19 @@ pub(super) fn update(
         });
     });
 
-    let issues = GLOBALS.issues.blocking_read().issues.clone();
+    // This probably shouldn't be cacualted and cloned every frame
+    let issues = GLOBALS.issues.clone();
 
-    let issues: Vec<&IssueInfo> = match open {
+    let issues: Vec<IssueInfo> = match open {
         true => issues
             .iter()
             .filter(|issue| issue.current_status.eq(&IssueStatus::Open))
+            .map(|info| info.clone())
             .collect(),
         false => issues
             .iter()
             .filter(|issue| issue.current_status.ne(&IssueStatus::Open))
+            .map(|info| info.clone())
             .collect(),
         _ => vec![],
     };

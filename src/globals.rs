@@ -2,16 +2,16 @@ use dashmap::DashMap;
 use lazy_static::lazy_static;
 use nostr_rust::{nostr_client::Client, Identity};
 use nostr_types::{Event, Id, PublicKeyHex, Url};
-use portan::{repository::RepoInfo, types::IssueResponse, Portan};
+use portan::{
+    repository::RepoInfo,
+    types::{IssueInfo, IssueResponse},
+    Portan,
+};
 use redb::{Database, ReadableTable, TableDefinition};
 use tokio::sync::{broadcast, mpsc, Mutex, RwLock};
 
 use super::comms::{ToMinionMessage, ToOverlordMessage};
-use crate::{
-    issues::{IssueResponses, Issues},
-    repositories::Repositories,
-    //ui::issues::Issue,
-};
+use crate::issues::{IssueResponses, Issues};
 
 pub struct Globals {
     pub db: Mutex<Option<Database>>,
@@ -33,12 +33,12 @@ pub struct Globals {
     pub people: DashMap<PublicKeyHex, String>,
 
     // All publishes repositories
-    pub repositories: Repositories,
+    pub repositories: DashMap<Id, RepoInfo>,
 
     pub repository: RwLock<Option<RepoInfo>>,
 
     // Issues currently in memory
-    pub issues: RwLock<Issues>,
+    pub issues: DashMap<Id, IssueInfo>,
     // pub issue: RwLock<Option<RepoInfo>>,
     // Issue comments currently in memory
     pub issue_responses: RwLock<IssueResponses>,
@@ -63,10 +63,10 @@ lazy_static! {
             incoming_events: RwLock::new(Vec::new()),
             events: DashMap::new(),
 
-            repositories: Repositories::default(),
+            repositories: DashMap::new(),
             repository: RwLock::new(None),
 
-            issues: RwLock::new(Issues::default()),
+            issues: DashMap::new(),
             //issue: RwLock::new(None),
             issue_responses: RwLock::new(IssueResponses::default()),
 

@@ -1,14 +1,13 @@
 use crate::comms::{ToMinionMessage, ToOverlordMessage};
 use crate::errors::Error;
 use crate::globals::GLOBALS;
-use crate::repositories;
+use crate::{repositories, settings};
 
 use nostr_types::{
     Event, EventKind, Id, IdHex, PreEvent, PrivateKey, PublicKey, PublicKeyHex, Tag, Unixtime, Url,
 };
 use std::sync::atomic::Ordering;
 use std::thread;
-use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::{select, task};
 
@@ -205,7 +204,7 @@ impl Overlord {
                 println!("{}", comment);
                 println!("{:?}", id);
             }
-            ToOverlordMessage::Shutdown => (),
+            ToOverlordMessage::Shutdown => return Ok(false),
             ToOverlordMessage::PublishRepository(repo_content) => {
                 repositories::publish_repository(repo_content)
                     .await
@@ -218,10 +217,14 @@ impl Overlord {
                 for r in repos {
                     GLOBALS
                         .repositories
-                        .repositories
                         .insert(Id::try_from_hex_string(&r.id)?, r);
                 }
             }
+            ToOverlordMessage::AddRelay(relay) => {
+                settings::add_relay(&relay).await?;
+            }
+            ToOverlordMessage::RemoveRelay(relay) => settings::remove_relay(&relay).await?,
+            ToOverlordMessage::Login(priv_key) => settings::login(&priv_key).await?,
         }
 
         Ok(true)
