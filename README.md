@@ -96,6 +96,7 @@ I can be contacted for comments or questions on nostr at _@thesimplekid.com (npu
 - [ ] Styling (it's super ugly) 
     - [ ] Bold repo names
     - [ ] Bold Issue Title
+- [ ] Truncated npub should take nostr_type
 ## Bugs (an incomplete list)
 - [x] Get stuck on a issue for a repo need to have a back to issues
 - [x] Creating an issue should add it to local list

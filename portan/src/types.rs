@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+use nostr_types::{Id, PublicKeyHex};
+
+#[derive(Debug, Clone, Serialize, Default, Deserialize, PartialEq, Eq)]
 pub struct IssueInfo {
     #[serde(default, skip_serializing)]
-    pub id: String,
+    pub id: Option<Id>,
     #[serde(default, skip_serializing)]
-    pub author: String,
+    pub author: Option<PublicKeyHex>,
     #[serde(default, skip_serializing)]
     pub timestamp: u64,
     pub title: String,
@@ -17,7 +19,7 @@ pub struct IssueInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IssueComment {
     #[serde(default, skip_serializing)]
-    pub author: String,
+    pub author: Option<PublicKeyHex>,
     #[serde(default, skip_serializing)]
     pub timestamp: u64,
     pub description: String,
@@ -34,7 +36,7 @@ pub enum IssueStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StatusUpdate {
     #[serde(default, skip_serializing)]
-    pub author: String,
+    pub author: Option<PublicKeyHex>,
     #[serde(default, skip_serializing)]
     pub timestamp: u64,
     pub status: IssueStatus,

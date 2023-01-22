@@ -1,4 +1,5 @@
 use thiserror::Error;
+use tokio::task::JoinError;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -21,16 +22,34 @@ pub enum Error {
     InvalidKey,
 
     #[error("Repo undefined")]
+    MissingValue,
+
+    #[error("Repo is not defined")]
     RepoUndefined,
 
     #[error("Nip 1 error")]
     NostrRustError(nostr_rust::nips::nip1::NIP1Error),
 
-    #[error("Database error")]
+    #[error("Nostr Types error")]
+    NostrTypesError(nostr_types::Error),
+
+    #[error("DB Error")]
     DBError(redb::Error),
 
-    #[error("Missing value")]
-    MissingValue,
+    #[error("Join error")]
+    JoinError,
+
+    #[error("Missing Nostr Client")]
+    MissingNostrClient,
+
+    #[error("Missing Database")]
+    MissingDb,
+}
+
+impl From<nostr_types::Error> for Error {
+    fn from(err: nostr_types::Error) -> Self {
+        Self::NostrTypesError(err)
+    }
 }
 
 impl From<serde_json::Error> for Error {
@@ -50,7 +69,6 @@ impl From<nostr_rust::bech32::Bech32Error> for Error {
         Self::InvalidKey
     }
 }
-
 impl From<nostr_rust::nips::nip1::NIP1Error> for Error {
     fn from(err: nostr_rust::nips::nip1::NIP1Error) -> Self {
         Self::NostrRustError(err)
@@ -60,5 +78,11 @@ impl From<nostr_rust::nips::nip1::NIP1Error> for Error {
 impl From<redb::Error> for Error {
     fn from(err: redb::Error) -> Self {
         Self::DBError(err)
+    }
+}
+
+impl From<JoinError> for Error {
+    fn from(_err: JoinError) -> Self {
+        Self::JoinError
     }
 }
